@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>My Tasks</h1>
+            <button class="add-btn">
+                <i class="fa-solid fa-plus"></i>
+                <span>Add New Task</span>
+            </button>
+        </header>
+
+        <!-- TaskCard -->
+        <main class="task-list-container">
+        </main>
+    </div>
+
+    <div id="addTaskModal" class="modal-overlay">
+        <div class="modal-content">
+            <form class="todo-app-form">
+                <h2>Add New Task</h2>
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <input type="text" id="category">
+                </div>
+                <div class="form-group">
+                    <label for="priority">Priority</label>
+                    <select id="priority">
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                    </select>
+                </div>
+                <div class="form-group-inline">
+                    <div class="form-group">
+                        <label for="startTime">Start Time</label>
+                        <input type="time" id="startTime">
+                    </div>
+                    <div class="form-group">
+                        <label for="endTime">End Time</label>
+                        <input type="time" id="endTime">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="dueDate">Due Date</label>
+                    <input type="date" id="dueDate" required>
+                </div>
+                 <div class="form-group">
+                    <label>Card Color</label>
+                    <div class="color-options">
+                        <input type="radio" id="color-blue" name="cardColor" value="bg-blue" checked>
+                        <label for="color-blue" class="color-dot bg-blue"></label>
+                        <input type="radio" id="color-green" name="cardColor" value="bg-green">
+                        <label for="color-green" class="color-dot bg-green"></label>
+                         <input type="radio" id="color-orange" name="cardColor" value="bg-orange">
+                        <label for="color-orange" class="color-dot bg-orange"></label>
+                        <input type="radio" id="color-purple" name="cardColor" value="bg-purple">
+                        <label for="color-purple" class="color-dot bg-purple"></label>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">Add Task</button>
+                    <button type="button" class="btn-close-modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
