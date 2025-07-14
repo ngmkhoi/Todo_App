@@ -7,17 +7,15 @@ Làm theo các bước dưới đây để thiết lập và chạy dự án tr�
 1. Cài đặt các gói phụ thuộc (Install Packages)
 Mở terminal tại thư mục gốc của dự án và chạy lệnh sau:
 
-Bash
-
 npm install
+
 (Lệnh này sẽ tự động cài đặt tất cả các thư viện cần thiết được định nghĩa trong file package.json).
 
 2. Khởi động Server (Run Server)
 Sau khi cài đặt thành công, sử dụng lệnh dưới đây để khởi động server backend:
 
-Bash
-
 npm start
+
 Terminal sẽ hiển thị thông báo cho biết server đã chạy thành công.
 
 3. Xem giao diện người dùng (View UI)
