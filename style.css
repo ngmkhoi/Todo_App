@@ -516,6 +516,29 @@ body {
     background-color: #f57c00; /* Màu cam đậm hơn khi hover */
 }
 
+/* --- CSS CHO NÚT CLEAR FILTERS --- */
+.btn-clear {
+    padding: 10px 15px;
+    border: 1px solid #dcdcdc; /* Viền xám nhạt */
+    border-radius: 8px;
+    font-size: 14px;
+    background-color: #f5f5f5; /* Nền xám rất nhẹ */
+    color: #555;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Khoảng cách giữa icon và chữ */
+}
+
+.btn-clear:hover {
+    background-color: #e0e0e0; /* Đậm hơn khi hover */
+    border-color: #c0c0c0;
+}
+
+.btn-clear i {
+    font-size: 16px; /* Kích thước icon */
+}
+
 /* --- NÂNG CẤP MÀU SẮC THÀNH GRADIENT --- */
 .bg-blue { background-image: linear-gradient(45deg, #2196f3, #64b5f6); }
 .bg-green { background-image: linear-gradient(45deg, #4caf50, #81c784); }

@@ -1,0 +1,24 @@
+{
+  "name": "homeword_22",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/ngmkhoi/Todo_App#readme",
+  "bugs": {
+    "url": "https://github.com/ngmkhoi/Todo_App/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ngmkhoi/Todo_App.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "main.js",
+  "scripts": {
+    "start": "json-server --watch tasks.json --port 4000",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "json-server": "^1.0.0-beta.3"
+  }
+}

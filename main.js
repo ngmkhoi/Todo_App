@@ -1,14 +1,14 @@
 const $ = document.querySelector.bind(document);
-const $$ = document.querySelectorAll.bind(document);   
+const $$ = document.querySelectorAll.bind(document);
 
-// Escape
 function escapeHTML(str) {
+    if (typeof str !== 'string') return '';
     const div = document.createElement('div');
     div.appendChild(document.createTextNode(str));
     return div.innerHTML;
 }
 
-// DOMs
+// === DOM Elements ===
 const addBtn = $('.add-btn');
 const addTaskModal = $('#addTaskModal');
 const closeBtn = $('.btn-close-modal');
@@ -21,7 +21,7 @@ const confirmMessage = $('#confirmMessage');
 const cancelDeleteBtn = $('#cancelDeleteBtn');
 const confirmDeleteBtn = $('#confirmDeleteBtn');
 
-// Forminputs
+// Form Inputs
 const formTitle = $('#formTitle');
 const formSubmitBtn = $('#formSubmitBtn');
 const taskIdInput = $('#task-id');
@@ -33,258 +33,290 @@ const filterStatus = $('#filterStatus');
 const filterCategory = $('#filterCategory');
 const filterPriority = $('#filterPriority');
 const filterColor = $('#filterColor');
+const clearFiltersBtn = $('#clearFiltersBtn');
 
 // Modal cảnh báo
 const warningModal = $('#warningModal');
 const warningMessage = $('#warningMessage');
 const closeWarningBtn = $('#closeWarningBtn');
 
- // Biến để lưu trữ chỉ mục của tác vụ sẽ bị xóa
-let taskToDeleteIndex = -1;
-const todoTasks = JSON.parse(localStorage.getItem("todoTask")) ?? [];
+// === Biến toàn cục ===
+let onConfirmAction = null; // Lưu hành động sẽ thực thi khi người dùng xác nhận
+let isFormDirty = false; // Cờ để kiểm tra xem form đã có thay đổi chưa
+let todoTasks = []; 
+const apiUrl = 'http://localhost:4000/tasks';
 
-// Show modal xoá task
-function showConfirmModal(message, index) {
-    confirmMessage.textContent = message; 
-    taskToDeleteIndex = index; 
-    confirmModal.classList.add('show'); 
+// === Các hàm xử lý API (CRUD) ===
+
+async function getTasks() {
+    try {
+        const res = await fetch(apiUrl);
+        if (!res.ok) throw new Error(res.status);
+        const allTasks = await res.json();
+        todoTasks = allTasks.sort((a, b) => b.id - a.id);
+        applyFilters();
+    } catch (error) {
+        console.error("Failed to fetch and load tasks:", error);
+        todoList.innerHTML = `<p class="empty-message">There is an error loading tasks. Please try again.</p>`;
+    }
 }
 
-// Hidden model xoá task
+// === Các hàm xử lý Modal (Đã được nâng cấp) ===
+
+function showConfirmModal(message, confirmCallback) {
+    confirmMessage.textContent = message;
+    onConfirmAction = confirmCallback; // Lưu lại hành động sẽ thực thi
+    confirmModal.classList.add('show');
+}
+
 function hideConfirmModal() {
-    confirmModal.classList.remove('show'); // Ẩn modal
-    taskToDeleteIndex = -1; // Đặt lại chỉ mục
+    confirmModal.classList.remove('show');
+    onConfirmAction = null; // Xóa hành động sau khi modal đóng
 }
 
-//Show alert
 function showWarningModal(message) {
     warningMessage.textContent = message;
     warningModal.classList.add('show');
 }
 
-// hidden alert
 function hideWarningModal() {
     warningModal.classList.remove('show');
 }
 
-closeWarningBtn.onclick = hideWarningModal;
+// === Các hàm xử lý Form (Đã được nâng cấp) ===
 
-
-cancelDeleteBtn.onclick = hideConfirmModal; 
-
-
-confirmDeleteBtn.onclick = function() {
-    if (taskToDeleteIndex !== -1) {
-
-        todoTasks.splice(taskToDeleteIndex, 1);
-
-        localStorage.setItem("todoTask", JSON.stringify(todoTasks)); 
-        renderTask(todoTasks);
-        applyFilters()
-    }
-    hideConfirmModal(); 
-};
-
-//Mở form
-function openForm(){
-    addTaskModal.className = "modal-overlay show"
-
-    titleInput.focus()
+function openForm() {
+    addTaskModal.classList.add('show');
+    titleInput.focus();
 }
-//Tắt form
-function closeForm(){
-    addTaskModal.className = "modal-overlay"
-    taskForm.reset()
-    
-    //Reset form khi edit
-    taskIdInput.value = ""; 
+
+// Hàm này sẽ đóng form ngay lập tức và reset trạng thái
+function forceCloseForm() {
+    addTaskModal.classList.remove('show');
+    taskForm.reset();
+    isFormDirty = false; // Reset cờ
+    taskIdInput.value = "";
     formTitle.textContent = "Add New Task";
     formSubmitBtn.textContent = "Add Task";
-    formSubmitBtn.classList.remove('btn-edit-mode'); // Remove any edit mode class
-    // Đảm bảo radio màu đầu tiên được chọn mặc định khi reset form
-    $('#color-blue').checked = true; 
-} 
+    $('#color-blue').checked = true;
+}
 
-//Hiển thị modal
-addBtn.onclick = openForm
+// Hàm này sẽ kiểm tra trước khi đóng
+function closeForm() {
+    if (isFormDirty) {
+        showConfirmModal(
+            "You have unsaved changes. Are you sure you want to discard them?",
+            forceCloseForm // Nếu xác nhận, gọi hàm đóng form ngay lập tức
+        );
+    } else {
+        forceCloseForm(); // Nếu không có thay đổi, đóng luôn
+    }
+}
 
-//Đóng modal
-closeBtn.onclick = closeForm
+// === Gắn các sự kiện cơ bản (Đã được nâng cấp) ===
 
-//Xử lý khi form on submit
-taskForm.onsubmit = event => {
-    event.preventDefault() 
-    // Lấy toàn bộ dữ liệu từ form
-    const newTask = Object.fromEntries(new FormData(taskForm))
-    const selectedCardColor = taskForm.querySelector('input[name="cardColor"]:checked').value;
+addBtn.onclick = openForm;
+closeBtn.onclick = closeForm; // Nút 'X' và 'Cancel' giờ sẽ kiểm tra trước khi đóng
+closeWarningBtn.onclick = hideWarningModal;
+cancelDeleteBtn.onclick = hideConfirmModal;
+clearFiltersBtn.onclick = clearFilters;
 
-    const editingIndex = $('#task-id').value;
+// Sự kiện click bên ngoài form để đóng
+addTaskModal.onclick = function(event) {
+    if (event.target === addTaskModal) {
+        closeForm();
+    }
+};
 
-    const currentTitle = $('#title').value.trim().toLowerCase()
+// Sự kiện xác nhận chung cho modal
+confirmDeleteBtn.onclick = async function () {
+    if (typeof onConfirmAction === 'function') {
+        await onConfirmAction(); // Thực thi hành động đã lưu
+    }
+    hideConfirmModal();
+};
 
-    if(editingIndex !== ""){
-        if(todoTasks.some((task, index) => task.title.toLowerCase().trim() === currentTitle && index !==
-            parseInt(editingIndex))){
-                showWarningModal("Task with this title already exists. Please choose a different title.");
-                return
-            }    
-    }else{
-        if( todoTasks.some(task => task.title.toLowerCase().trim() === currentTitle)){
-            showWarningModal("Task with this title already exists. Please choose a different title.");
-            return
+// Theo dõi thay đổi trong form
+taskForm.oninput = () => {
+    isFormDirty = true;
+};
+
+// Sự kiện submit form
+taskForm.onsubmit = async event => {
+    event.preventDefault();
+    const formData = Object.fromEntries(new FormData(taskForm));
+    const editingId = formData.taskId; 
+    const currentTitle = formData.title.trim().toLowerCase();
+
+    const isDuplicate = todoTasks.some(task => 
+        task.title.toLowerCase().trim() === currentTitle && task.id != editingId
+    );
+
+    if (isDuplicate) {
+        showWarningModal("Task with this title already exists. Please choose a different title.");
+        return;
+    }
+
+    const taskData = {
+        title: escapeHTML(formData.title),
+        description: escapeHTML(formData.description),
+        category: escapeHTML(formData.category),
+        priority: escapeHTML(formData.priority),
+        dueDate: formData.dueDate,
+        cardColor: escapeHTML(taskForm.querySelector('input[name="cardColor"]:checked').value),
+    };
+
+    try {
+        if (editingId) {
+            const originalTask = todoTasks.find(task => task.id == editingId);
+            taskData.isCompleted = originalTask.isCompleted;
+
+            await fetch(`${apiUrl}/${editingId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(taskData)
+            });
+        } else {
+            taskData.isCompleted = false;
+            await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(taskData)
+            });
         }
+        await getTasks();
+        forceCloseForm(); // Đóng form ngay lập tức sau khi submit thành công
+    } catch (error) {
+        console.error('Failed to save task:', error);
+        showWarningModal('Could not save the task. Please try again.');
     }
+};
 
-    if(editingIndex !== ''){
-        let editTask = Object.fromEntries(new FormData(taskForm))
-        editTask.isCompleted = todoTasks[editingIndex].isCompleted
-        editTask.cardColor = selectedCardColor;
-
-        todoTasks[editingIndex] = editTask
-      
-    }else{
-    newTask.cardColor = selectedCardColor;
-    newTask.isCompleted = false
-
-    todoTasks.unshift(newTask)
-
-    }
-
-    localStorage.setItem("todoTask", JSON.stringify(todoTasks))
-    renderTask(todoTasks)
-    applyFilters()
-    closeForm()
-}
-
-// Xử lý sự kiện click vào các button trên taskcard
-todoList.onclick = function(event){
-    const actionBtn = event.target.closest('.action-btn');
-    
-    //Bắt sự kiện khi nhấn vào card bất kì
+// Sự kiện trên danh sách task
+todoList.onclick = async function (event) {
     const taskCard = event.target.closest('.task-card');
+    if (!taskCard) return;
 
-    //Nếu event ở ngoài card thì không bắt event
-    if(!taskCard) return
+    const taskId = taskCard.dataset.id;
+    const task = todoTasks.find(t => t.id === taskId);
+    if (!task) return;
 
-    const taskTitle = taskCard.querySelector('.task-title').textContent;
-    const index = parseInt(taskCard.dataset.index)
-    const cardValue = todoTasks[index]
+    const deleteBtn = event.target.closest('.btn-delete');
+    const completeBtn = event.target.closest('.btn-complete');
+    const editBtn = event.target.closest('.btn-edit');
 
-    if(!actionBtn) return; // Nếu không phải nút hành động thì thoát
-
-    //Bắt event click vào button
-    if(actionBtn.classList.contains('btn-delete')){
-        
-        showConfirmModal(`Are you sure you want to delete the task "${taskTitle}"?`, index);
-
-    }else if(actionBtn.classList.contains('btn-complete')){
-        todoTasks[index].isCompleted = !todoTasks[index].isCompleted;
-        
-        localStorage.setItem("todoTask", JSON.stringify(todoTasks)); 
-        renderTask(todoTasks); 
-
-    }else if(actionBtn.classList.contains('btn-edit')){
-        $('#formTitle').innerText = 'Edit Task';
-        $('#formSubmitBtn').innerText = 'Update Task';
-
-        // Lưu index vào hidden input để form submit biết là đang edit
-        $('#task-id').value = index;
-
-        // Điền dữ liệu của task vào form
-        $('#title').value = cardValue.title;
-        $('#description').value = cardValue.description;
-        $('#category').value = cardValue.category;
-        $('#priority').value = cardValue.priority;
-        $('#startTime').value = cardValue.startTime;
-        $('#endTime').value = cardValue.endTime;
-        $('#dueDate').value = cardValue.dueDate;
-
-        // Chọn đúng màu cho radio button
-        taskForm.querySelector(`input[name="cardColor"][value="${cardValue.cardColor}"]`).checked = true;
-        
-        // Mở form
+    if (deleteBtn) {
+        // Dùng modal xác nhận chung
+        showConfirmModal(
+            `Are you sure you want to delete the task "${task.title}"?`,
+            async () => { // Hành động xóa sẽ được truyền vào
+                try {
+                    await fetch(`${apiUrl}/${task.id}`, { method: 'DELETE' });
+                    await getTasks();
+                } catch (error) {
+                    console.error('Failed to delete task:', error);
+                    showWarningModal('Could not delete the task. Please try again.');
+                }
+            }
+        );
+    } else if (completeBtn) {
+        const updatedStatus = { isCompleted: !task.isCompleted };
+        try {
+            await fetch(`${apiUrl}/${taskId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedStatus)
+            });
+            await getTasks();
+        } catch (error) {
+            console.error('Failed to update task status:', error);
+            showWarningModal('Could not update task status.');
+        }
+    } else if (editBtn) {
         openForm();
+        formTitle.innerText = 'Edit Task';
+        formSubmitBtn.innerText = 'Update Task';
+        taskIdInput.value = task.id;
+        titleInput.value = task.title;
+        $('#description').value = task.description;
+        $('#category').value = task.category;
+        $('#priority').value = task.priority;
+        $('#dueDate').value = task.dueDate;
+        taskForm.querySelector(`input[name="cardColor"][value="${task.cardColor}"]`).checked = true;
     }
-    
+};
+
+// === Các hàm xử lý Filter và Render ===
+
+function clearFilters() {
+    // Reset tất cả các input về giá trị mặc định
+    searchInput.value = '';
+    filterStatus.value = 'all';
+    filterCategory.value = 'all';
+    filterPriority.value = 'all';
+    filterColor.value = 'all';
+
+    // Áp dụng lại bộ lọc để render lại toàn bộ danh sách
+    applyFilters();
 }
 
-//Filter
 function applyFilters() {
-    const searchKeyword = searchInput.value.toLowerCase().trim()
-    const status = filterStatus.value 
-    const category = filterCategory.value
-    const priority = filterPriority.value
-    const color = filterColor.value
+    const searchKeyword = searchInput.value.toLowerCase().trim();
+    const status = filterStatus.value;
+    const category = filterCategory.value;
+    const priority = filterPriority.value;
+    const color = filterColor.value;
     
-    let filteredTasks = todoTasks
+    let filteredTasks = todoTasks;
 
-    // Tìm kiếm theo từ khóa
-    if(searchKeyword){
-        filteredTasks = filteredTasks.filter(tasks =>
-            tasks.title.toLowerCase().trim().includes(searchKeyword) ||
-            tasks.description.toLowerCase().trim().includes(searchKeyword)
-        )
+    if (searchKeyword) {
+        filteredTasks = filteredTasks.filter(task =>
+            task.title.toLowerCase().includes(searchKeyword) ||
+            task.description.toLowerCase().includes(searchKeyword)
+        );
+    }
+    if (status !== 'all') {
+        filteredTasks = filteredTasks.filter(task => (status === 'completed' ? task.isCompleted : !task.isCompleted));
+    }
+    if (category !== 'all') {
+        filteredTasks = filteredTasks.filter(task => task.category === category);
+    }
+    if (priority !== 'all') {
+        filteredTasks = filteredTasks.filter(task => task.priority === priority);
+    }
+    if (color !== 'all') {
+        filteredTasks = filteredTasks.filter(task => task.cardColor === color);
     }
 
-    // Lọc theo trạng thái
-    if(status !== 'all'){
-        filteredTasks = filteredTasks.filter(tasks => {
-            return status === 'completed' ? tasks.isCompleted : !tasks.isCompleted
-        })
-    }
-
-    //Lọc theo category
-    if(category !==  'all'){
-        filteredTasks = filteredTasks.filter(tasks => tasks.category === category)
-    }
-
-    //Lọc theo priority
-    if(priority !== 'all'){
-        filteredTasks = filteredTasks.filter(tasks => tasks.priority === priority)
-    }
-
-    //Lọc theo color
-    if(color !== 'all'){
-        filteredTasks = filteredTasks.filter(tasks => tasks.cardColor === color)
-    }
-
-    renderTask(filteredTasks)
+    renderTask(filteredTasks);
 }
 
-//Gắn sự kiện cho bộ lọc
 searchInput.addEventListener('input', applyFilters);
 filterStatus.addEventListener('change', applyFilters);
 filterCategory.addEventListener('change', applyFilters);
 filterPriority.addEventListener('change', applyFilters);
 filterColor.addEventListener('change', applyFilters);
 
-function renderTask(tasks){
-
+function renderTask(tasks) {
     if (!tasks || tasks.length === 0) {
-        // Hiển thị thông báo khi không có task nào hoặc không tìm thấy
-        const message = todoTasks.length === 0 ? "Nothing here..." : "Can not find the right task...";
+        const message = todoTasks.length === 0 ? "You have no tasks. Let's add one!" : "No tasks match your filters.";
         todoList.innerHTML = `<p class="empty-message">${message}</p>`;
         return;
     }
 
-    const html = tasks.map((task, index) => 
-        `
-           <div class="task-card ${task.isCompleted ? 'completed' : ''}" data-index="${index}">
-            <div class="task-header ${task.cardColor}">
+    const html = tasks.map(task => `
+        <div class="task-card ${task.isCompleted ? 'completed' : ''}" data-id="${task.id}">
+            <div class="task-header ${escapeHTML(task.cardColor)}">
                 <h3 class="task-title">${escapeHTML(task.title)}</h3>
                 <div class="task-actions">
-
                     <button class="action-btn btn-complete">
                         ${task.isCompleted 
                             ? '<i class="fa-solid fa-circle-check"></i>' 
                             : '<i class="fa-regular fa-circle"></i>'
                         }
                     </button>
-
-                   <button class="action-btn btn-edit"><i class="fa-solid fa-pen"></i></button>
-
+                    <button class="action-btn btn-edit"><i class="fa-solid fa-pen"></i></button>
                     <button class="action-btn btn-delete"><i class="fa-solid fa-trash"></i></button>
-
                 </div>
             </div>
             <div class="task-body">
@@ -298,9 +330,10 @@ function renderTask(tasks){
                <span class="task-due-date">Due: ${escapeHTML(task.dueDate)}</span>
             </div>
         </div>
-        `
-    ).join('')
-    todoList.innerHTML = html
+    `).join('');
+    
+    todoList.innerHTML = html;
 }
 
-document.addEventListener('DOMContentLoaded', applyFilters);
+// === Khởi chạy ứng dụng ===
+document.addEventListener('DOMContentLoaded', getTasks);

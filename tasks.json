@@ -1,0 +1,14 @@
+{
+  "tasks": [
+    {
+      "id": "f9bf",
+      "title": "Lỗi bug",
+      "description": "Bug không thể sửa, update status, delete",
+      "category": "Studying",
+      "priority": "High",
+      "dueDate": "2025-07-14",
+      "cardColor": "bg-purple",
+      "isCompleted": false
+    }
+  ]
+}
